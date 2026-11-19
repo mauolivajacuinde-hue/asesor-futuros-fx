@@ -1889,7 +1889,7 @@
     var m = Math.max(0, Math.round((Date.now() - Date.parse(s.generated_at_utc)) / 60000));
     return { min: m, txt: m < 60 ? 'hace ' + m + ' min' : (m < 2880 ? 'hace ' + Math.round(m / 60) + ' h' : 'hace ' + Math.round(m / 1440) + ' días') };
   }
-  var SNAPNAME = { 'USD/MXN': 'USD/MXN', 'EUR/MXN': 'EUR/MXN', 'CAD/MXN': 'CAD/MXN', 'EUR/USD': 'EUR/USD', irx: 'Tasa USD (^IRX)', evz: 'Vol. implícita EUR/USD (^EVZ)' };
+  var SNAPNAME = { 'USD/MXN': 'USD/MXN', 'EUR/MXN': 'EUR/MXN', 'CAD/MXN': 'CAD/MXN', 'EUR/USD': 'EUR/USD', irx: 'Tasa USD (^IRX)', evz: 'Vol. implícita EUR/USD (^EVZ, opcional)' };
   function snapFails(s) { return Object.keys(s.series).filter(function (k) { return !s.series[k].ok; }); }
   function ghRunUrl() {
     var s = MK.snap;
@@ -1900,7 +1900,7 @@
   }
   function snapExplain() {
     var s = MK.snap, a = snapAge(s), f = snapFails(s), gh = ghRunUrl();
-    var h = '<p><b>Datos de Yahoo Finance consultados con yfinance</b> el ' + snapWhen(s) + ' h, hora de la Ciudad de México (' + a.txt + '). Resultado: <b>' + s.ok_count + ' de ' + s.total + ' series correctas</b>' + (f.length ? '; las que fallaron conservan su dato de la consulta anterior.' : '.') + '</p>';
+    var h = '<p><b>Datos de Yahoo Finance consultados con yfinance</b> el ' + snapWhen(s) + ' h, hora de la Ciudad de México (' + a.txt + '). Resultado: <b>' + s.ok_count + ' de ' + s.total + ' series correctas</b>' + (s.complete ? ' (todas las obligatorias)' : '') + (f.length ? '. Las que fallaron conservan su dato de la consulta anterior si existe; sin ^EVZ, la volatilidad de las opciones sale del historial.' : '.') + '</p>';
     h += '<div class="tablewrap" style="max-height:none"><table class="snapt"><thead><tr><th class="l">Serie</th><th class="l">Símbolo</th><th class="l">Estado</th><th>Último dato</th><th>Valor</th><th>Días</th><th class="l">Detalle</th></tr></thead><tbody>';
     Object.keys(s.series).forEach(function (k) {
       var e = s.series[k];

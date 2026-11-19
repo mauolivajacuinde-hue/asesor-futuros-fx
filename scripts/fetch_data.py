@@ -15,7 +15,7 @@ SERIES = {
     "CAD/MXN": {"symbol": "CADMXN=X", "kind": "fx", "desc": "Dólar canadiense / peso mexicano"},
     "EUR/USD": {"symbol": "EURUSD=X", "kind": "fx", "desc": "Euro / dólar (USD/EUR = 1 / EUR/USD)"},
     "irx": {"symbol": "^IRX", "kind": "rate", "desc": "Tasa del T-bill de EE. UU. a 13 semanas (%)"},
-    "evz": {"symbol": "^EVZ", "kind": "vol", "desc": "Volatilidad implícita EUR/USD de Cboe (%)"},
+    "evz": {"symbol": "^EVZ", "kind": "vol", "optional": True, "desc": "Volatilidad implícita EUR/USD de Cboe (%), opcional"},
 }
 LIMITS = {"fx": (0.05, 100.0), "rate": (0.0, 30.0), "vol": (0.5, 100.0)}
 PERIOD = os.environ.get("PERIOD", "2y")
@@ -97,7 +97,7 @@ def main():
     series, ok = {}, 0
     for key, meta in SERIES.items():
         rows, err, attempts = fetch_with_retry(key, meta, PERIOD)
-        entry = {"symbol": meta["symbol"], "desc": meta["desc"], "kind": meta["kind"], "attempts": attempts}
+        entry = {"symbol": meta["symbol"], "desc": meta["desc"], "kind": meta["kind"], "optional": bool(meta.get("optional")), "attempts": attempts}
         if rows:
             ok += 1
             entry.update(ok=True, updated=True, error=None, rows=rows)
@@ -125,7 +125,9 @@ def main():
         "period": PERIOD,
         "ok_count": ok,
         "total": len(SERIES),
-        "complete": ok == len(SERIES),
+        "complete": all(e["ok"] for e in series.values() if not e["optional"]),
+        "required_ok": sum(1 for e in series.values() if e["ok"] and not e["optional"]),
+        "required_total": sum(1 for e in series.values() if not e["optional"]),
         "run_url": (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
                     if os.environ.get("GITHUB_RUN_ID") else None),
         "trigger": os.environ.get("GITHUB_EVENT_NAME", "manual"),
