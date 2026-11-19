@@ -23,9 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - id: pages
-        uses: actions/configure-pages@v5
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -34,7 +31,7 @@ jobs:
         run: pip install -U -r requirements.txt
 
       - name: Bajar el snapshot publicado (respaldo si una serie falla)
-        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/data/market.json" -o prev.json || echo "Sin snapshot previo"
+        run: curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/market.json" -o prev.json || echo "Sin snapshot previo"
 
       - name: Consultar Yahoo Finance con yfinance
         run: |
@@ -45,6 +42,8 @@ jobs:
         run: |
           cp index.html _site/index.html
           touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
