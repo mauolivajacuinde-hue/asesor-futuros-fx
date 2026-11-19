@@ -1,0 +1,61 @@
+name: Actualizar datos y publicar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:        # botón "Run workflow" en GitHub = consulta nueva a Yahoo
+  schedule:
+    - cron: "17 * * * 1-5"  # cada hora en días hábiles (UTC)
+    - cron: "17 14 * * 0,6" # una vez al día en fin de semana
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar yfinance (última versión)
+        run: pip install -U -r requirements.txt
+
+      - name: Bajar el snapshot publicado (respaldo si una serie falla)
+        run: curl -fsSL "${{ steps.pages.outputs.base_url }}/data/market.json" -o prev.json || echo "Sin snapshot previo"
+
+      - name: Consultar Yahoo Finance con yfinance
+        run: |
+          mkdir -p _site/data
+          python scripts/fetch_data.py --out _site/data/market.json --prev prev.json
+
+      - name: Armar el sitio
+        run: |
+          cp index.html _site/index.html
+          touch _site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
