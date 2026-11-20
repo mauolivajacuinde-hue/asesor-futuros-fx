@@ -17,9 +17,17 @@ payoff, margin account, vector de P&L, VaR/ES, cobertura con opciones, optimizad
 3. Actions → "Actualizar datos y publicar" → **Run workflow**. En 1–2 minutos queda el link:
    `https://<usuario>.github.io/<repositorio>/`
 
-## Forzar una consulta nueva
-Actions → "Actualizar datos y publicar" → Run workflow (o el botón "Generar consulta nueva" dentro de la pestaña Mercado,
-que lleva ahí). Solo pueden hacerlo los colaboradores del repositorio. El resumen de cada ejecución muestra la tabla de series.
+## Pedir una consulta nueva en este momento (paso a paso)
+1. En la app, pestaña **7 Mercado**, pulsa **Generar consulta nueva**. Se abre GitHub en
+   Actions → "Actualizar datos y publicar". Inicia sesión si te lo pide.
+2. A la derecha, pulsa el botón gris **Run workflow**.
+3. En el cuadrito ("Branch: main") no cambies nada y pulsa el botón verde **Run workflow**.
+4. Espera 1 a 2 minutos: el círculo amarillo cambia a palomita verde.
+5. Regresa a la app. Si abriste GitHub desde el botón, los datos se cargan solos; si no, pulsa **Actualizar datos**.
+
+Si no ves el botón "Run workflow", tu cuenta no es colaboradora del repositorio. El dueño puede agregarla en
+Settings → Collaborators → Add people. Sin ese permiso la app sigue actualizándose sola cada 20 minutos en días hábiles.
+El resumen de cada ejecución muestra la tabla de series y su resultado.
 
 ## Opcional: que el botón "Actualizar datos" lance una consulta nueva
 Sin esto, el botón relee la consulta más reciente (máximo 20 minutos de antigüedad en días hábiles).

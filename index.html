@@ -1925,6 +1925,18 @@
     if (m) return 'https://github.com/' + m[1] + '/' + (location.pathname.split('/')[1] || (m[1] + '.github.io')) + '/actions/workflows/actualizar-datos.yml';
     return '';
   }
+  function ghHowTo(gh) {
+    return '<details open style="margin:10px 0"><summary><b>Cómo pedir una consulta nueva a Yahoo en este momento (paso a paso)</b></summary>' +
+      '<ol style="margin:8px 0 0 18px;padding:0">' +
+      '<li>Pulsa <a href="' + gh + '" target="_blank" rel="noopener">Generar consulta nueva</a> (también está en la columna de la izquierda). Se abre GitHub en otra pestaña, en el programa "Actualizar datos y publicar". Si GitHub te pide iniciar sesión, entra con tu cuenta.</li>' +
+      '<li>Del lado derecho, arriba de la lista de ejecuciones, pulsa el botón gris <b>Run workflow</b>.</li>' +
+      '<li>Se abre un cuadrito con "Branch: main". No cambies nada y pulsa el botón verde <b>Run workflow</b>.</li>' +
+      '<li>Aparece una ejecución nueva con un círculo amarillo girando. Tarda de 1 a 2 minutos; cuando termina se pone una palomita verde.</li>' +
+      '<li>Regresa a esta pestaña. Si abriste GitHub con el botón de esta página, los datos nuevos se cargan solos y arriba sale "Listo: datos actualizados con la consulta de las …". Si no, pulsa <b>Actualizar datos</b>.</li>' +
+      '</ol>' +
+      '<p style="margin-top:8px"><b>Si no aparece el botón "Run workflow":</b> tu cuenta no tiene permiso en el repositorio. GitHub solo deja lanzar consultas a sus colaboradores; el dueño puede agregarte en Settings → Collaborators → Add people. Sin ese permiso la app funciona igual: se actualiza sola cada 20 minutos en días hábiles y "Actualizar datos" carga la consulta más reciente.</p>' +
+      '<p><b>Qué hace por dentro.</b> GitHub enciende una computadora en la nube, instala Python y yfinance, baja de Yahoo Finance los tipos de cambio y la tasa del dólar, guarda el resultado en un archivo con la hora de la consulta y vuelve a publicar esta página. Cada ejecución queda registrada con su tabla de series correctas.</p></details>';
+  }
   function snapExplain() {
     var s = MK.snap, a = snapAge(s), f = snapFails(s), gh = ghRunUrl();
     var h = '<p><b>Datos de Yahoo Finance consultados con yfinance</b> el ' + snapWhen(s) + ' h, hora de la Ciudad de México (' + a.txt + '). Resultado: <b>' + s.ok_count + ' de ' + s.total + ' series correctas</b>' + (s.complete ? ' (todas las obligatorias)' : '') + (f.length ? '. Las que fallaron conservan su dato de la consulta anterior si existe; sin ^EVZ, la volatilidad de las opciones sale del historial.' : '.') + '</p>';
@@ -1934,7 +1946,8 @@
       h += '<tr><td class="l">' + (SNAPNAME[k] || k) + '</td><td class="l">' + e.symbol + '</td><td class="l">' + (e.ok ? badge('ok', 'OK') : badge(e.rows && e.rows.length ? 'warn' : 'bad', e.rows && e.rows.length ? 'Falló, dato anterior' : 'Falló')) + '</td><td>' + (e.last_date ? ddmmyyyy(e.last_date) : '—') + '</td><td>' + (isFinite(e.last) ? fmt(e.last, e.kind === 'fx' ? 4 : 2) : '—') + '</td><td>' + (e.n || 0) + '</td><td class="l">' + (e.ok ? (e.attempts > 1 ? 'correcta al intento ' + e.attempts : 'correcta') : String(e.error || '').replace(/</g, '&lt;')) + '</td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<p><b>Cómo se actualiza.</b> Un programa en Python dentro de GitHub (GitHub Actions) consulta Yahoo con yfinance cada 20 minutos en días hábiles y una vez al día en fin de semana, y vuelve a publicar la app con esos datos. "Actualizar datos" ' + (MK.snap && MK.snap.trigger_url ? 'pide una consulta nueva a Yahoo y la carga en cuanto termina.' : 'relee la consulta más reciente sin recargar la página.') + (gh ? ' Para forzar una consulta nueva ahora mismo usa <a href="' + gh + '" target="_blank" rel="noopener">Generar consulta nueva</a> → "Run workflow" (solo colaboradores del repositorio; tarda 1 a 2 minutos). Si lo abres con el botón de la izquierda, esta página carga los datos nuevos sola al terminar.' : '') + (s.run_url ? ' <a href="' + s.run_url + '" target="_blank" rel="noopener">Ver el registro de esta consulta</a>.' : '') + '</p>';
+    h += '<p><b>Cómo se actualiza.</b> Un programa en Python dentro de GitHub (GitHub Actions) consulta Yahoo con yfinance cada 20 minutos en días hábiles y una vez al día en fin de semana, y vuelve a publicar la app con esos datos. "Actualizar datos" ' + (MK.snap && MK.snap.trigger_url ? 'pide una consulta nueva a Yahoo y la carga en cuanto termina.' : 'relee la consulta más reciente sin recargar la página.') + (s.run_url ? ' <a href="' + s.run_url + '" target="_blank" rel="noopener">Ver el registro de esta consulta</a>.' : '') + '</p>';
+    if (gh) h += ghHowTo(gh);
     h += '<p>Fuente: ' + s.source + '. Yahoo no tiene API oficial; si algún día cambia su formato, la app sigue funcionando con la última consulta buena o con los datos incrustados.</p>';
     return h;
   }
