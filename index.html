@@ -175,11 +175,17 @@
   body:not([data-step="7"]) .s7only, body:not([data-step="7"]) #panel7,
   body:not([data-step="8"]) .s8only, body:not([data-step="8"]) #panel8,
   body:not([data-step="9"]) .s9only, body:not([data-step="9"]) #panel9,
-  body:not([data-step="10"]) .s10only, body:not([data-step="10"]) #panel10 { display: none; }
+  body:not([data-step="10"]) .s10only, body:not([data-step="10"]) #panel10,
+  body:not([data-step="11"]) #panel11 { display: none; }
   body[data-step="7"] .s1only, body[data-step="7"] .s2only, body[data-step="7"] #panel1, body[data-step="7"] #panel2,
   body[data-step="8"] .s1only, body[data-step="8"] .s2only, body[data-step="8"] #panel1, body[data-step="8"] #panel2,
   body[data-step="9"] .s1only, body[data-step="9"] .s2only, body[data-step="9"] #panel1, body[data-step="9"] #panel2,
-  body[data-step="10"] .s1only, body[data-step="10"] .s2only, body[data-step="10"] #panel1, body[data-step="10"] #panel2 { display: none; }
+  body[data-step="10"] .s1only, body[data-step="10"] .s2only, body[data-step="10"] #panel1, body[data-step="10"] #panel2,
+  body[data-step="11"] .s1only, body[data-step="11"] .s2only, body[data-step="11"] #panel1, body[data-step="11"] #panel2 { display: none; }
+  .sum { font-size: 17px; line-height: 1.6; }
+  .sumt td { padding: 7px 10px; } .sumt td:first-child { color: var(--muted); width: 42%; }
+  .flash { font-size: 13px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; padding: 3px 10px; }
+  .databar .chip[disabled] { opacity: .6; cursor: progress; }
   body[data-step="9"] .s610, body[data-step="10"] .s610 { display: block; }
   @media print {
     .steps, .databar, .controls, header p, .noprint { display: none !important; }
@@ -198,6 +204,7 @@
     <span class="dot wait" id="mkDot"></span>
     <span id="mkText">Datos incrustados (respaldo)</span>
     <button type="button" class="chip" id="mkRefresh">Actualizar datos</button>
+    <span class="flash" id="mkFlash" hidden></span>
   </div>
 
   <ol class="steps" aria-label="Pasos del proyecto">
@@ -211,6 +218,7 @@
     <li data-step="8"><button type="button" data-step="8"><b>8</b>Backtesting</button></li>
     <li data-step="9"><button type="button" data-step="9"><b>9</b>Estrés</button></li>
     <li data-step="10"><button type="button" data-step="10"><b>10</b>Tablero de riesgo</button></li>
+    <li data-step="11"><button type="button" data-step="11"><b>11</b>Resumen</button></li>
   </ol>
 
   <div class="grid">
@@ -234,13 +242,14 @@
             <input type="number" id="N" min="1" step="1000" value="100000">
           </div>
           <div class="field">
-            <label for="days">Plazo (días)</label>
-            <input type="number" id="days" min="1" max="720" step="1" value="90">
+            <label for="days">Vencimiento</label>
+            <select id="days"><option value="28">28 días</option><option value="90" selected>90 días</option><option value="182">182 días</option><option value="360">360 días</option></select>
           </div>
         </div>
         <div class="field">
-          <label for="comm" id="commLbl">Costos totales (comisiones)</label>
-          <input type="number" id="comm" min="0" step="10" value="0">
+          <label for="comm" id="commLbl">Comisión por operación (% del valor nominal)</label>
+          <input type="number" id="comm" min="0" max="5" step="0.01" value="0.05">
+          <p class="hint" id="commHint"></p>
         </div>
       </div>
 
@@ -449,8 +458,8 @@
         <div class="field">
           <label for="pmode">Plazo</label>
           <select id="pmode">
-            <option value="grid">Probar varios plazos</option>
-            <option value="fixed">Usar el plazo de arriba</option>
+            <option value="grid">Probar los 4 vencimientos (28, 90, 182 y 360 días)</option>
+            <option value="fixed">Usar el vencimiento de arriba</option>
           </select>
         </div>
         <div class="field">
@@ -656,8 +665,11 @@
         <h2>Backtesting del VaR</h2>
         <div class="explain" id="btExplain" aria-live="polite"></div>
         <div class="kpis c3" id="kpis8"></div>
+        <h3 style="margin-top:18px">Prueba de Christoffersen: ¿las excepciones llegan en rachas?</h3>
+        <div class="explain" id="btChris"></div>
+        <div class="tablewrap" style="max-height:none"><table><thead><tr><th class="l">Día anterior → día de hoy</th><th>Sin excepción hoy</th><th>Con excepción hoy</th><th>Probabilidad de excepción hoy</th></tr></thead><tbody id="btTrans"></tbody></table></div>
         <h3 class="sub">Resultados por modelo</h3>
-        <div class="tablewrap" style="max-height:none"><table><thead><tr><th class="l">Modelo</th><th>VaR promedio</th><th>Excepciones</th><th>Esperadas</th><th>Kupiec (p)</th><th>Christoffersen (p)</th><th class="l">Zona de Basilea</th><th class="l">Veredicto</th></tr></thead><tbody id="btBody"></tbody></table></div>
+        <div class="tablewrap" style="max-height:none"><table><thead><tr><th class="l">Modelo</th><th>VaR promedio</th><th>Excepciones</th><th>Esperadas</th><th>Kupiec (p)</th><th>Christoffersen: independencia (p)</th><th>Christoffersen: cobertura condicional (p)</th><th class="l">Zona de Basilea</th><th class="l">Veredicto</th></tr></thead><tbody id="btBody"></tbody></table></div>
         <h3 class="sub">P&amp;L diario contra el VaR del día anterior</h3>
         <div class="chartbox" id="chartBt"></div>
         <p class="note" id="btNote"></p>
@@ -681,6 +693,15 @@
         <div class="explain" id="tbExplain" aria-live="polite"></div>
         <p class="note" id="tbNote"></p>
       </div>
+
+      <div id="panel11" class="panel">
+        <h2>Resumen de la operación</h2>
+        <div class="reco"><p class="sum" id="sumText"></p></div>
+        <div class="kpis c3" id="kpis11"></div>
+        <div class="tablewrap" style="max-height:none"><table class="sumt"><tbody id="sumBody"></tbody></table></div>
+        <div class="chips noprint" style="margin-top:12px"><button type="button" class="chip primary" id="sumCopy">Copiar resumen</button><button type="button" class="chip" id="sumPrint">Imprimir / guardar PDF</button><span class="hint" id="sumMsg"></span></div>
+        <p class="note" id="sumNote"></p>
+      </div>
     </section>
   </div>
 </div>
@@ -698,7 +719,8 @@
   var HISTN = HIST.dates.length;
   var defVol = { 'USD/MXN': 12, 'EUR/MXN': 12, 'CAD/MXN': 13, 'EUR/USD': 7, 'USD/EUR': 7 };
   var rates = { MXN: 7.00, USD: 3.75, EUR: 2.00, CAD: 2.50 };
-  var state = { pair: 'USD/MXN', dir: 'long', N: 100000, days: 90, comm: 0, K: 0, kManual: false, range: 15, stPct: 5, step: 1, im: 10, mm: 10, vol: 12, volManual: false, drift: 0, seed: 7, win: HISTN, hz: 1, rtype: 'simple', sortv: 'date', c1: 95, c2: 99, h1: 1, h2: 10, mmode: 'hist', hsel: '1', hstrat: 'protect', hd1: 2, hd2: 2, hratio: 100, ovol: 12, ovolManual: false, cap: 1000000, perfil: 'mod', lim: { cons: 2, mod: 5, agr: 10 }, obj: 'exposure', hmode: 'auto', pmode: 'grid', pbud: 3 };
+  var FIXED_DAYS = [28, 90, 182, 360];
+  var state = { pair: 'USD/MXN', dir: 'long', N: 100000, days: 90, comm: 0, commPct: 0.05, K: 0, kManual: false, range: 15, stPct: 5, step: 1, im: 10, mm: 10, vol: 12, volManual: false, drift: 0, seed: 7, win: HISTN, hz: 1, rtype: 'simple', sortv: 'date', c1: 95, c2: 99, h1: 1, h2: 10, mmode: 'hist', hsel: '1', hstrat: 'protect', hd1: 2, hd2: 2, hratio: 100, ovol: 12, ovolManual: false, cap: 1000000, perfil: 'mod', lim: { cons: 2, mod: 5, agr: 10 }, obj: 'exposure', hmode: 'auto', pmode: 'grid', pbud: 3 };
 
   var $ = function (id) { return document.getElementById(id); };
   var els = { N: $('N'), days: $('days'), comm: $('comm'), spot: $('spot'), rb: $('rb'), rq: $('rq'), K: $('K'), range: $('range'), st: $('st'), stVal: $('stVal'), im: $('im'), mm: $('mm'), vol: $('vol'), drift: $('drift'), seed: $('seed'), prices: $('prices'), win: $('win'), hz: $('hz'), rtype: $('rtype'), sortv: $('sortv'), c1: $('c1'), c2: $('c2'), h1: $('h1'), h2: $('h2'), mmode: $('mmode'), hsel: $('hsel'), hstrat: $('hstrat'), hd1: $('hd1'), hd2: $('hd2'), hratio: $('hratio'), ovol: $('ovol'), cap: $('cap'), perfil: $('perfil'), lim1: $('lim1'), lim2: $('lim2'), lim3: $('lim3'), obj: $('obj'), hmode: $('hmode'), pmode: $('pmode'), pbud: $('pbud') };
@@ -720,8 +742,9 @@
     return spot() * (1 + rates[p.quote] / 100 * T) / (1 + rates[p.base] / 100 * T);
   }
   function sign() { return state.dir === 'long' ? 1 : -1; }
-  function pnl(S) { return sign() * (S - state.K) * state.N - state.comm; }
-  function breakeven() { return state.K + sign() * state.comm / state.N; }
+  function commAmt() { return state.commPct / 100 * state.N * state.K; }
+  function pnl(S) { return sign() * (S - state.K) * state.N - commAmt(); }
+  function breakeven() { return state.K + sign() * commAmt() / state.N; }
   function ST() { return state.K * (1 + state.stPct / 100); }
 
   function buildPairChips() {
@@ -747,7 +770,7 @@
       ? 'USD/EUR es el inverso de EUR/USD (1 ÷ precio), por eso su spot se calcula solo.'
       : 'Se cotiza en ' + p.quote + ' por cada 1 ' + p.base + '.';
     $('NLbl').textContent = 'Nominal (en ' + p.base + ')';
-    $('commLbl').textContent = 'Costos totales (en ' + p.quote + ')';
+    $('commLbl').textContent = 'Comisión por operación (% del valor nominal)';
     $('spotLbl').textContent = 'Precio spot (' + p.quote + ' por ' + p.base + ')';
     $('rbLbl').textContent = 'Tasa ' + p.base + ' (% anual)';
     $('rqLbl').textContent = 'Tasa ' + p.quote + ' (% anual)';
@@ -765,8 +788,8 @@
     var p = P();
     var n = function (el, dflt) { var v = parseFloat(el.value); return isFinite(v) ? v : dflt; };
     state.N = Math.max(1, n(els.N, state.N));
-    state.days = Math.max(1, n(els.days, state.days));
-    state.comm = Math.max(0, n(els.comm, state.comm));
+    state.commPct = Math.min(5, Math.max(0, n(els.comm, state.commPct)));
+    var dv = parseInt(els.days.value, 10); if (FIXED_DAYS.indexOf(dv) >= 0) state.days = dv;
     state.range = n(els.range, state.range);
     if (src === 'spot' && !p.inverseOf) {
       var s = n(els.spot, p.spot); if (s > 0) p.spot = s;
@@ -804,10 +827,12 @@
     var notional = state.N * state.K;
     var perPct = state.N * state.K * 0.01;
     var html = '';
+    $('commHint').textContent = fmt(state.commPct, 2) + '% × ' + fmt(notional, 0) + ' ' + p.quote + ' = ' + fmt(commAmt(), 2) + ' ' + p.quote + '. Se cobra una vez al pactar y ya está restada en el payoff y el breakeven.';
     html += '<div class="kpi"><div class="k">Nocional</div><div class="v">' + fmt(notional, 0) + ' ' + p.quote + '</div></div>';
     html += '<div class="kpi"><div class="k">Breakeven</div><div class="v">' + fmt(breakeven(), p.dec) + '</div></div>';
     html += '<div class="kpi"><div class="k">Resultado en el escenario</div><div class="v ' + (pn >= 0 ? 'gain' : 'loss') + '">' + money(pn, p.quote) + '</div></div>';
     html += '<div class="kpi"><div class="k">Por cada 1% de movimiento</div><div class="v">' + fmt(perPct, 0) + ' ' + p.quote + '</div></div>';
+    html += '<div class="kpi"><div class="k">Comisión (' + fmt(state.commPct, 2) + '% del nominal)</div><div class="v">' + fmt(commAmt(), 2) + ' ' + p.quote + '</div></div>';
     $('kpis').innerHTML = html;
   }
 
@@ -899,7 +924,7 @@
   function renderAll() {
     renderKpis(); renderExplain(); renderActive();
   }
-  function renderActive() { if (state.step === 10) renderPanel10(); else if (state.step === 9) renderPanel9(); else if (state.step === 8) renderPanel8(); else if (state.step === 7) renderPanel7(); else if (state.step === 6) renderPanel6(); else if (state.step === 5) renderPanel5(); else if (state.step === 4) renderPanel4(); else if (state.step === 3) renderPanel3(); else if (state.step === 2) renderPanel2(); else renderChart(); }
+  function renderActive() { if (state.step === 11) renderPanel11(); else if (state.step === 10) renderPanel10(); else if (state.step === 9) renderPanel9(); else if (state.step === 8) renderPanel8(); else if (state.step === 7) renderPanel7(); else if (state.step === 6) renderPanel6(); else if (state.step === 5) renderPanel5(); else if (state.step === 4) renderPanel4(); else if (state.step === 3) renderPanel3(); else if (state.step === 2) renderPanel2(); else renderChart(); }
   function setStep(n) {
     state.step = n; document.body.dataset.step = String(n);
     Array.prototype.forEach.call(document.querySelectorAll('.steps li[data-step]'), function (li) {
@@ -985,14 +1010,14 @@
     $('marginHint').textContent = 'Margen inicial: ' + fmt(res.IM, 0) + ' ' + q + ' (' + state.im + '% de un nocional de ' + fmt(res.notional, 0) + '). Si el saldo cae debajo de ' + fmt(res.MM, 0) + ', depositas lo necesario para volver al margen inicial.';
     $('marginRate').textContent = 'La cámara invierte el margen a la tasa libre de riesgo de ' + q + ': ' + fmt(res.rate, 2) + '% anual (la tasa cotizada de arriba). La cuenta está en ' + q + '.';
     var kp = function (l, v, c) { return '<div class="kpi"><div class="k">' + l + '</div><div class="v ' + (c || '') + '">' + v + '</div></div>'; };
-    var net = res.cum + res.intr;
+    var comm = commAmt(), net = res.cum + res.intr - comm;
     $('kpis2').innerHTML =
       kp('Margen inicial' + (state.mm !== state.im ? ' / mínimo' : ' (y mínimo)'), fmt(res.IM, 0) + (state.mm !== state.im ? ' / ' + fmt(res.MM, 0) : '') + ' ' + q) +
       kp('Margin calls', String(res.calls), res.calls > 0 ? 'loss' : 'gain') +
       kp('Total depositado en calls', fmt(res.dep, 0) + ' ' + q) +
       kp('Capital máximo comprometido', fmt(res.IM + res.dep, 0) + ' ' + q) +
       kp('Intereses del margen', money(res.intr, q)) +
-      kp('Resultado final', money(net, q), net >= 0 ? 'gain' : 'loss');
+      kp('Resultado final (neto de comisión)', money(net, q), net >= 0 ? 'gain' : 'loss');
 
     var bal = [], marks = [], pxMarks = [];
     res.rows.forEach(function (r) {
@@ -1018,7 +1043,7 @@
     var h = '<p>' + (res.calls === 0
       ? 'En esta trayectoria <b>no hubo margin calls</b>: el saldo nunca bajó de ' + fmt(res.MM, 0) + ' ' + q + '.'
       : 'Hubo <b>' + res.calls + ' margin call' + (res.calls > 1 ? 's' : '') + '</b> (el primero el día ' + first.d + ') y depositaste ' + fmt(res.dep, 0) + ' ' + q + ' en total.') + '</p>';
-    h += '<p>Las variaciones diarias suman ' + money(res.cum, q) + ', que es justo el payoff del paso 1 sin costos. Más ' + money(res.intr, q) + ' de intereses sobre el margen, tu resultado final es <b>' + money(net, q) + '</b>.</p>';
+    h += '<p>Las variaciones diarias suman ' + money(res.cum, q) + ', que es justo el payoff del paso 1 antes de la comisión. Más ' + money(res.intr, q) + ' de intereses sobre el margen y menos ' + fmt(comm, 2) + ' ' + q + ' de comisión (' + fmt(state.commPct, 2) + '% del nominal), tu resultado final es <b>' + money(net, q) + '</b>.</p>';
     $('explain2').innerHTML = h;
     $('pathNote').textContent = mk.own
       ? 'Usando tus ' + (mk.path.length - 1) + ' precios pegados (el día 0 es K). El plazo de la simulación sigue lo que pegaste.'
@@ -1461,7 +1486,7 @@
       kp('Prima neta, % del nocional', fmt(H.net / notional * 100, 2) + '%') +
       kp('VaR ' + c2 + '% · ' + dl(h1) + ', sin → con', fmt(A.u.VaR, 0) + ' → ' + fmt(A.w.VaR, 0), red(A) > 0 ? 'gain' : '') +
       kp('VaR ' + c2 + '% · ' + dl(h2) + ', sin → con', fmt(B.u.VaR, 0) + ' → ' + fmt(B.w.VaR, 0), red(B) > 0 ? 'gain' : '') +
-      kp('Capital inicial (margen + prima)', V(IM + Math.max(0, H.net))) +
+      kp('Capital inicial (margen + prima + comisión)', V(IM + Math.max(0, H.net) + commAmt())) +
       kp('Pérdida máxima al vencimiento', unlimited ? 'Ilimitada' : V(Math.max(0, -worst)), unlimited ? 'loss' : '');
 
     var rows = '';
@@ -1544,10 +1569,7 @@
   ];
   function stratAllowed(st) { return state.hmode === 'auto' || (state.hmode === 'no' ? st.kind === 'none' : st.kind !== 'none'); }
   function plazoList() {
-    if (state.pmode === 'fixed') return [state.days];
-    var l = [30, 60, 90, 180, 360];
-    if (l.indexOf(state.days) < 0) l.push(state.days);
-    return l.sort(function (a, b) { return a - b; });
+    return state.pmode === 'fixed' ? [state.days] : FIXED_DAYS.slice();
   }
   function roundN(n) {
     if (!isFinite(n)) return n;
@@ -1608,7 +1630,7 @@
     var unitIM = Math.max(state.im / 100 * c.K, 1e-9 * c.K), prem = Math.max(0, c.unitPrem);
     c.unitIM = unitIM;
     c.Nvar = c.unitVaR > 1e-12 ? limit / c.unitVaR : Infinity;
-    c.Ncap = capital / (unitIM + prem);
+    c.Ncap = capital / (unitIM + prem + state.commPct / 100 * c.K);
     c.Nbud = prem > 1e-12 ? budget / prem : Infinity;
     c.Nstar = Math.min(c.Nvar, c.Ncap, c.Nbud);
     c.bind = c.Nstar === c.Nvar ? 'riesgo' : (c.Nstar === c.Ncap ? 'capital' : 'prima');
@@ -1678,7 +1700,7 @@
     var cands = runSearch(state.pair, capital, limit, budget);
     var pk = pickBest(cands, state.obj, state.N), b = pk.best, costMode = state.obj === 'cost';
     var Nrec = (costMode && pk.ok) ? state.N : roundN(b.Nstar);
-    var effRec = Nrec * b.delta, IM = b.unitIM * Nrec, prem = b.unitPrem * Nrec, used = IM + Math.max(0, prem);
+    var effRec = Nrec * b.delta, IM = b.unitIM * Nrec, prem = b.unitPrem * Nrec, comm6 = state.commPct / 100 * b.K * Nrec, used = IM + Math.max(0, prem) + comm6;
     var varAmt = b.unitVaR * Nrec, varPct = capital > 0 ? varAmt / capital * 100 : 0;
     var V = function (x) { return fmt(x, 0) + ' ' + q; };
     var dirTxt = state.dir === 'long' ? 'larga' : 'corta';
@@ -1704,11 +1726,11 @@
       kp('Nominal recomendado', fmt(Nrec, 0) + ' ' + p.base) +
       kp('Exposición efectiva (nominal × delta ' + fmt(b.delta, 2) + ')', fmt(effRec, 0) + ' ' + p.base) +
       kp('VaR ' + fmt(state.c2, 1) + '% a ' + state.h2 + ' días, % del capital', fmt(varPct, 2) + '% (límite ' + fmt(limPct, 1) + '%)', ok ? 'gain' : 'loss') +
-      kp('Capital usado (margen + prima)', V(used) + ' · ' + fmt(capital > 0 ? used / capital * 100 : 0, 1) + '%') +
+      kp('Capital usado (margen + prima + comisión)', V(used) + ' · ' + fmt(capital > 0 ? used / capital * 100 : 0, 1) + '%') +
       kp(prem >= 0 ? 'Prima neta pagada' : 'Prima neta recibida', V(Math.abs(prem)));
 
     var h = '<p><b>Qué pide tu perfil.</b> Capital de ' + V(capital) + ', perfil ' + perfName + ': el VaR ' + fmt(state.c2, 1) + '% a ' + state.h2 + ' días puede llegar a ' + V(limit) + '.</p>';
-    h += '<p><b>Cuánto se usa.</b> Margen inicial de ' + V(IM) + (prem > 0 ? ' más una prima de ' + V(prem) : (prem < 0 ? ' y una prima neta a tu favor de ' + V(-prem) : '')) + ', en total ' + V(used) + '. Te quedan ' + V(Math.max(0, capital - used)) + ' libres para cubrir margin calls.</p>';
+    h += '<p><b>Cuánto se usa.</b> Margen inicial de ' + V(IM) + (prem > 0 ? ' más una prima de ' + V(prem) : (prem < 0 ? ' y una prima neta a tu favor de ' + V(-prem) : '')) + (comm6 > 0 ? ' y una comisión de ' + V(comm6) : '') + ', en total ' + V(used) + '. Te quedan ' + V(Math.max(0, capital - used)) + ' libres para cubrir margin calls.</p>';
     h += '<p><b>Qué te frena.</b> ' + (costMode && pk.ok ? 'Con ese nominal cumples todas las restricciones.' : 'Lo que limita el nominal es ' + bindTxt(b.bind) + '.') + '</p>';
     h += '<p><b>Exposición efectiva.</b> La delta de esta posición es ' + fmt(b.delta, 2) + ': de cada movimiento del tipo de cambio, ' + fmt(b.delta * 100, 0) + '% llega a tu P&amp;L. Sin cobertura la delta es 1. Por eso se compara nominal × delta y no solo el nominal.</p>';
     if (b.st.kind === 'none') {
@@ -1907,7 +1929,7 @@
       h += '<tr><td class="l">' + (SNAPNAME[k] || k) + '</td><td class="l">' + e.symbol + '</td><td class="l">' + (e.ok ? badge('ok', 'OK') : badge(e.rows && e.rows.length ? 'warn' : 'bad', e.rows && e.rows.length ? 'Falló, dato anterior' : 'Falló')) + '</td><td>' + (e.last_date ? ddmmyyyy(e.last_date) : '—') + '</td><td>' + (isFinite(e.last) ? fmt(e.last, e.kind === 'fx' ? 4 : 2) : '—') + '</td><td>' + (e.n || 0) + '</td><td class="l">' + (e.ok ? (e.attempts > 1 ? 'correcta al intento ' + e.attempts : 'correcta') : String(e.error || '').replace(/</g, '&lt;')) + '</td></tr>';
     });
     h += '</tbody></table></div>';
-    h += '<p><b>Cómo se actualiza.</b> Un programa en Python dentro de GitHub (GitHub Actions) consulta Yahoo con yfinance cada hora en días hábiles y una vez al día en fin de semana, y vuelve a publicar la app con esos datos. "Actualizar datos" relee la consulta más reciente sin recargar la página.' + (gh ? ' Para forzar una consulta nueva ahora mismo usa <a href="' + gh + '" target="_blank" rel="noopener">Generar consulta nueva</a> → "Run workflow" (solo colaboradores del repositorio; tarda 1 a 2 minutos) y después pulsa "Actualizar datos".' : '') + (s.run_url ? ' <a href="' + s.run_url + '" target="_blank" rel="noopener">Ver el registro de esta consulta</a>.' : '') + '</p>';
+    h += '<p><b>Cómo se actualiza.</b> Un programa en Python dentro de GitHub (GitHub Actions) consulta Yahoo con yfinance cada 20 minutos en días hábiles y una vez al día en fin de semana, y vuelve a publicar la app con esos datos. "Actualizar datos" ' + (MK.snap && MK.snap.trigger_url ? 'pide una consulta nueva a Yahoo y la carga en cuanto termina.' : 'relee la consulta más reciente sin recargar la página.') + (gh ? ' Para forzar una consulta nueva ahora mismo usa <a href="' + gh + '" target="_blank" rel="noopener">Generar consulta nueva</a> → "Run workflow" (solo colaboradores del repositorio; tarda 1 a 2 minutos). Si lo abres con el botón de la izquierda, esta página carga los datos nuevos sola al terminar.' : '') + (s.run_url ? ' <a href="' + s.run_url + '" target="_blank" rel="noopener">Ver el registro de esta consulta</a>.' : '') + '</p>';
     h += '<p>Fuente: ' + s.source + '. Yahoo no tiene API oficial; si algún día cambia su formato, la app sigue funcionando con la última consulta buena o con los datos incrustados.</p>';
     return h;
   }
@@ -1922,7 +1944,7 @@
     if (MK.state === 'live' && MK.src === 'snapshot' && MK.snap) {
       var S = MK.snap, f = snapFails(S), ag = snapAge(S);
       dot.className = 'dot ' + (S.complete && ag.min < 1800 ? 'live' : 'wait');
-      tx.textContent = 'Yahoo Finance (yfinance) · consulta del ' + snapWhen(S) + ' h, CDMX (' + ag.txt + ') · ' + S.ok_count + ' de ' + S.total + ' series OK' + (f.length ? ' · sin actualizar: ' + f.map(function (k) { return SNAPNAME[k] || k; }).join(', ') : '') + ' · historial hasta ' + ddmmyyyy(lastDate()) + (MK.same ? ' · no hay una consulta más nueva' : '') + (MK.msg ? ' · la última lectura falló' : '');
+      tx.textContent = 'Yahoo Finance (yfinance) · consulta del ' + snapWhen(S) + ' h, CDMX (' + ag.txt + ') · ' + S.ok_count + ' de ' + S.total + ' series OK' + (f.length ? ' · sin actualizar: ' + f.map(function (k) { return SNAPNAME[k] || k; }).join(', ') : '') + ' · historial hasta ' + ddmmyyyy(lastDate()) + (MK.msg ? ' · la última lectura falló' : '');
     }
     else if (MK.state === 'live') tx.textContent = 'Yahoo Finance en vivo · actualizado ' + when + ' · historial de ' + HISTN + ' días hasta ' + ddmmyyyy(lastDate()) + (MK.msg ? ' · la última actualización falló' : '');
     else if (MK.state === 'wait') tx.textContent = 'Leyendo los datos de Yahoo Finance…';
@@ -2162,10 +2184,11 @@
       var l1 = zl(n00, 1 - pi01) + zl(n01, pi01) + zl(n10, 1 - pi11) + zl(n11, pi11);
       lrInd = Math.max(0, -2 * (l0 - l1)); pInd = 2 * (1 - normCdf(Math.sqrt(lrInd)));
     }
+    var lrCC = isFinite(lrInd) ? lrPof + lrInd : NaN, pCC = isFinite(lrCC) ? Math.exp(-lrCC / 2) : NaN;
     var pm = Math.pow(1 - p, T), cdf = pm;
     for (k = 0; k < x; k++) { pm = pm * (T - k) / (k + 1) * p / (1 - p); cdf += pm; }
     var zone = cdf < 0.95 ? 'verde' : (cdf < 0.9999 ? 'amarilla' : 'roja');
-    return { T: T, x: x, expd: T * p, rate: pi * 100, lrPof: lrPof, pPof: pPof, lrInd: lrInd, pInd: pInd, zone: zone, cdf: cdf };
+    return { T: T, x: x, expd: T * p, rate: pi * 100, lrPof: lrPof, pPof: pPof, lrInd: lrInd, pInd: pInd, lrCC: lrCC, pCC: pCC, n00: n00, n01: n01, n10: n10, n11: n11, zone: zone, cdf: cdf };
   }
   function btCompute(conf) {
     var s = seriesOf(state.pair), n = s.length, W = Math.round(Math.min(Math.max(state.btW, 60), n - 40));
@@ -2192,13 +2215,14 @@
     var verdict = function (st) {
       if (st.pPof < 0.05) return badge('bad', st.x > st.expd ? 'Se rechaza: subestima' : 'Se rechaza: sobrestima');
       if (isFinite(st.pInd) && st.pInd < 0.05) return badge('warn', 'Excepciones agrupadas');
+      if (isFinite(st.pCC) && st.pCC < 0.05) return badge('warn', 'Falla cobertura condicional');
       return badge('ok', 'No se rechaza');
     };
     var pf = function (v) { return isFinite(v) ? fmt(v, 3) : 'n/d'; };
     var rows = '';
     ['hist', 'param', 'ewma'].forEach(function (k) {
       var st = bt.stats[k], avg = mean(bt.M[k]);
-      rows += '<tr><td class="l">' + names[k] + '</td><td>' + fmt(avg, 0) + ' ' + q + '</td><td>' + st.x + ' de ' + st.T + ' (' + fmt(st.rate, 2) + '%)</td><td>' + fmt(st.expd, 1) + '</td><td>' + pf(st.pPof) + '</td><td>' + pf(st.pInd) + '</td><td class="l">' + badge(st.zone === 'verde' ? 'ok' : (st.zone === 'amarilla' ? 'warn' : 'bad'), st.zone) + '</td><td class="l">' + verdict(st) + '</td></tr>';
+      rows += '<tr><td class="l">' + names[k] + '</td><td>' + fmt(avg, 0) + ' ' + q + '</td><td>' + st.x + ' de ' + st.T + ' (' + fmt(st.rate, 2) + '%)</td><td>' + fmt(st.expd, 1) + '</td><td>' + pf(st.pPof) + '</td><td>' + pf(st.pInd) + '</td><td>' + pf(st.pCC) + '</td><td class="l">' + badge(st.zone === 'verde' ? 'ok' : (st.zone === 'amarilla' ? 'warn' : 'bad'), st.zone) + '</td><td class="l">' + verdict(st) + '</td></tr>';
     });
     $('btBody').innerHTML = rows;
     var sh = bt.stats.hist, se = bt.stats.ewma, sp = bt.stats.param;
@@ -2216,12 +2240,21 @@
     h += '<p><b>Lectura.</b> El modelo más cercano a lo esperado en esta muestra fue <b>' + names[best] + '</b> (' + bt.stats[best].x + ' excepciones contra ' + fmt(bt.stats[best].expd, 1) + ' esperadas). ' +
       (bt.pnl.length < 250 ? 'Con solo ' + bt.pnl.length + ' días de prueba y una confianza alta hay muy pocas excepciones esperadas, así que la prueba tiene poca potencia: un resultado verde no demuestra que el modelo sea bueno.' : 'La muestra es razonable para esta confianza.') + '</p>';
     $('btExplain').innerHTML = h;
+    var cm = ($('btModel').value || state.btModel), cs = bt.stats[cm], r0 = cs.n00 + cs.n01, r1 = cs.n10 + cs.n11;
+    var pp = function (a, b) { return b > 0 ? fmt(a / b * 100, 2) + '%' : 'n/d'; };
+    $('btTrans').innerHTML = '<tr><td class="l">Ayer sin excepción</td><td>' + cs.n00 + '</td><td>' + cs.n01 + '</td><td>' + pp(cs.n01, r0) + '</td></tr>' +
+      '<tr><td class="l">Ayer con excepción</td><td>' + cs.n10 + '</td><td>' + cs.n11 + '</td><td>' + pp(cs.n11, r1) + '</td></tr>';
+    var ch = '<p><b>La idea.</b> Kupiec solo cuenta excepciones. Christoffersen revisa además <b>cuándo</b> pasan: si un modelo es bueno, una excepción hoy no debería hacer más probable otra mañana. Si las excepciones llegan pegadas, el modelo tarda en reaccionar cuando sube la volatilidad, justo cuando más importa.</p>';
+    ch += '<p><b>Cómo se calcula (modelo ' + names[cm] + ').</b> La tabla cuenta las transiciones entre días: n<sub>00</sub> = ' + cs.n00 + ', n<sub>01</sub> = ' + cs.n01 + ', n<sub>10</sub> = ' + cs.n10 + ', n<sub>11</sub> = ' + cs.n11 + '. Se compara π<sub>01</sub> = n<sub>01</sub> ÷ (n<sub>00</sub> + n<sub>01</sub>) = ' + pp(cs.n01, r0) + ' contra π<sub>11</sub> = n<sub>11</sub> ÷ (n<sub>10</sub> + n<sub>11</sub>) = ' + pp(cs.n11, r1) + '. Si son parecidas, hay independencia.</p>';
+    ch += '<p><b>Resultados.</b> Independencia: LR<sub>ind</sub> = ' + (isFinite(cs.lrInd) ? fmt(cs.lrInd, 3) : 'n/d') + ', p = ' + pf(cs.pInd) + ' (ji-cuadrada, 1 g.l.). Cobertura condicional, que junta Kupiec y la independencia: LR<sub>cc</sub> = LR<sub>POF</sub> + LR<sub>ind</sub> = ' + (isFinite(cs.lrCC) ? fmt(cs.lrCC, 3) : 'n/d') + ', p = ' + pf(cs.pCC) + ' (ji-cuadrada, 2 g.l.). ' +
+      (!isFinite(cs.pInd) ? 'Con ' + cs.x + ' excepciones no se puede calcular la prueba (hacen falta excepciones y días sin excepción).' : (cs.pCC < 0.05 || cs.pInd < 0.05 ? '<b>Se rechaza</b> al 5%: el modelo no cumple.' : '<b>No se rechaza</b> al 5%: las excepciones no muestran rachas y su número es consistente con la confianza.')) + '</p>';
+    $('btChris').innerHTML = ch;
 
     var mk = ($('btModel').value || state.btModel), M = bt.M[mk], E = bt.E[mk], pts = [], vl = [], marks = [], i;
     for (i = 0; i < bt.pnl.length; i++) { pts.push({ x: i, y: bt.pnl[i] }); vl.push({ x: i, y: -M[i] }); if (E[i]) marks.push({ x: i, y: bt.pnl[i] }); }
     drawLines('chartBt', { series: [{ pts: pts, color: 'var(--muted)', name: 'P&L del día', w: 1.2 }, { pts: vl, color: 'var(--accent)', name: '−VaR (' + names[mk] + ')', w: 2 }], marks: marks,
       xmax: bt.pnl.length - 1, fy: compact, xl: function (x) { return ddmmyy(HIST.dates[Math.min(HIST.dates.length - 1, bt.W + x + 1)]); }, xt: 'Fecha', aria: 'Backtesting del VaR' });
-    $('btNote').textContent = 'Kupiec (POF): LR = −2·ln[(1−p)^(T−x)·p^x] + 2·ln[(1−x/T)^(T−x)·(x/T)^x], con p = 1 − confianza; el p-valor sale de una ji-cuadrada con 1 grado de libertad. Christoffersen: LR de independencia con las transiciones entre días con y sin excepción. Las zonas de Basilea se definieron para 99% y 250 días; aquí se generalizan con la misma regla binomial. El P&L usa el nocional actual constante y retornos simples; no incluye intereses, comisiones ni la cobertura.';
+    $('btNote').textContent = 'Kupiec (POF): LR = −2·ln[(1−p)^(T−x)·p^x] + 2·ln[(1−x/T)^(T−x)·(x/T)^x], con p = 1 − confianza; el p-valor sale de una ji-cuadrada con 1 grado de libertad. Christoffersen: LR_ind = −2·ln[(1−π)^(n00+n10)·π^(n01+n11)] + 2·ln[(1−π01)^n00·π01^n01·(1−π11)^n10·π11^n11], con π = (n01+n11)/(n00+n01+n10+n11), ji-cuadrada con 1 g.l.; LR_cc = LR_POF + LR_ind, ji-cuadrada con 2 g.l. Las zonas de Basilea se definieron para 99% y 250 días; aquí se generalizan con la misma regla binomial. El P&L usa el nocional actual constante y retornos simples; no incluye intereses, comisiones ni la cobertura.';
   }
 
   // ---------- Paso 9: estrés ----------
@@ -2299,13 +2332,13 @@
     var q = P().quote, cap = state.cap, limPct = state.lim[state.perfil], limVaR = limPct / 100 * cap, h = state.h2, c = state.c2;
     var H = hedgeSetup(), K = state.K, notional = K * state.N, IM = state.im / 100 * notional, prem = H.net;
     var hv = varHedged(c, h), sw = stressWindows(state.sth), w0 = sw.top[0], noHedge = state.hstrat === 'none';
-    var stressLoss = w0 ? Math.max(0, -(noHedge ? w0.pu : w0.ph)) : 0, used = IM + Math.max(0, prem);
+    var stressLoss = w0 ? Math.max(0, -(noHedge ? w0.pu : w0.ph)) : 0, used = IM + Math.max(0, prem) + commAmt();
     var bt = btCompute(btConfVal()), zone = bt.stats.hist.zone;
     var age = daysSince(lastDate()), warn = state.warn / 100, m = [];
     var st = function (u) { return u >= 1 ? 'bad' : (u >= warn ? 'warn' : 'ok'); };
     m.push({ n: 'VaR ' + fmt(c, 1) + '% a ' + h + ' días (con cobertura)', v: hv.VaR, vt: fmt(hv.VaR, 0) + ' ' + q, l: limVaR, lt: fmt(limVaR, 0) + ' ' + q, u: limVaR > 0 ? hv.VaR / limVaR : NaN, why: 'VaR histórico del paso 5 contra el límite del perfil (' + fmt(limPct, 1) + '% del capital).' });
     m.push({ n: 'Expected Shortfall ' + fmt(c, 1) + '% a ' + h + ' días', v: hv.ES, vt: fmt(hv.ES, 0) + ' ' + q, l: NaN, lt: 'sin límite', u: NaN, why: 'Promedio de las pérdidas peores que el VaR; ' + fmt(cap > 0 ? hv.ES / cap * 100 : 0, 2) + '% del capital.', info: true });
-    m.push({ n: 'Uso del capital (margen + prima)', v: used, vt: fmt(used, 0) + ' ' + q, l: state.limUse / 100 * cap, lt: fmt(state.limUse / 100 * cap, 0) + ' ' + q, u: cap > 0 ? used / (state.limUse / 100 * cap) : NaN, why: 'Margen inicial más la prima neta pagada. ' + fmt(cap > 0 ? used / cap * 100 : 0, 1) + '% del capital.' });
+    m.push({ n: 'Uso del capital (margen + prima + comisión)', v: used, vt: fmt(used, 0) + ' ' + q, l: state.limUse / 100 * cap, lt: fmt(state.limUse / 100 * cap, 0) + ' ' + q, u: cap > 0 ? used / (state.limUse / 100 * cap) : NaN, why: 'Margen inicial, prima neta pagada y comisión. ' + fmt(cap > 0 ? used / cap * 100 : 0, 1) + '% del capital.' });
     m.push({ n: 'Estrés: peor ventana de ' + state.sth + ' días', v: stressLoss, vt: fmt(stressLoss, 0) + ' ' + q, l: state.limStress / 100 * cap, lt: fmt(state.limStress / 100 * cap, 0) + ' ' + q, u: cap > 0 ? stressLoss / (state.limStress / 100 * cap) : NaN, why: 'Peor episodio real del historial aplicado a la posición de hoy.' });
     m.push({ n: 'Backtesting del VaR histórico', v: NaN, vt: bt.stats.hist.x + ' excepciones (esperadas ' + fmt(bt.stats.hist.expd, 1) + ')', l: NaN, lt: 'zona verde', u: NaN, why: 'Zona de Basilea ' + zone + '; Kupiec p = ' + fmt(bt.stats.hist.pPof, 3) + '.', fixed: zone === 'verde' ? 'ok' : (zone === 'amarilla' ? 'warn' : 'bad') });
     m.push({ n: 'Datos de mercado', v: NaN, vt: (MK.full ? (MK.src === 'snapshot' ? 'yfinance, consulta ' + snapAge(MK.snap).txt : 'Yahoo Finance') : 'Archivo incrustado') + ', último cierre hace ' + age + (age === 1 ? ' día' : ' días'), l: NaN, lt: 'máximo 4 días', u: NaN, why: MK.full ? (MK.src === 'snapshot' ? MK.snap.ok_count + ' de ' + MK.snap.total + ' series correctas en la consulta del ' + snapWhen(MK.snap) + ' h.' : 'Historial descargado en esta sesión.') : 'Sin conexión en vivo: los precios pueden estar desactualizados.', fixed: age <= 4 ? (MK.full && !(MK.src === 'snapshot' && !MK.snap.complete) ? 'ok' : 'warn') : (age <= 10 ? 'warn' : 'bad') });
@@ -2333,6 +2366,61 @@
     tbLast = { T: T, lab: lab[worst] };
   }
   var tbLast = null;
+
+  // ---------- Paso 11: resumen ----------
+  function expectedPnl(H) {
+    var s = seriesOf(state.pair), n = s.length, win = Math.min(Math.max(state.win, 30), n), start = n - win;
+    var td = Math.max(1, Math.round(state.days * 252 / 360)), vals = [], i, K = state.K;
+    for (i = start + td; i < n; i++) vals.push(payoffH(H, K * (s[i] / s[i - td])));
+    if (vals.length >= 30) return { mean: mean(vals), lossP: vals.filter(function (v) { return v < 0; }).length / vals.length, n: vals.length, td: td, how: 'hist' };
+    var lr = []; for (i = start + 1; i < n; i++) lr.push(Math.log(s[i] / s[i - 1]));
+    return { mean: payoffH(H, K * Math.exp(mean(lr) * td)), lossP: NaN, n: 0, td: td, how: 'drift' };
+  }
+  function trendTxt() {
+    var sr = seriesOf(state.pair), n = sr.length, win = Math.min(Math.max(state.win, 30), n), a = sr[n - win], z = sr[n - 1], ch = (z / a - 1) * 100, dec = P().dec;
+    return 'Ojo: es un promedio histórico, no un pronóstico; en la ventana ' + state.pair + ' pasó de ' + fmt(a, dec) + ' a ' + fmt(z, dec) + ' (' + (ch >= 0 ? '+' : '−') + fmt(Math.abs(ch), 1) + '%), y esa tendencia ' + ((ch >= 0) === (state.dir === 'long') ? 'favorece' : 'castiga') + ' a una posición ' + (state.dir === 'long' ? 'larga' : 'corta') + '.';
+  }
+  function sumData() {
+    ensureOvol();
+    var p = P(), q = p.quote, b = p.base, H = hedgeSetup(), notional = state.N * state.K, IM = state.im / 100 * notional;
+    var hv = varHedged(state.c2, state.h2), ep = expectedPnl(H), intr = IM * rates[q] / 100 * state.days / 360, sp = spot();
+    var hedgeTxt = 'sin cobertura';
+    if (state.hstrat !== 'none') hedgeTxt = H.legs.map(function (l) { return (l.side > 0 ? 'compra de ' : 'venta de ') + l.kind + ' con strike ' + fmt(l.X, p.dec) + ' ' + q; }).join(' y ') + ' sobre ' + fmt(H.qty, 0) + ' ' + b + ' (prima neta ' + (H.net >= 0 ? 'pagada' : 'recibida') + ' de ' + fmt(Math.abs(H.net), 2) + ' ' + q + ')';
+    return { p: p, q: q, b: b, H: H, notional: notional, IM: IM, hv: hv, ep: ep, intr: intr, sp: sp, hedgeTxt: hedgeTxt, comm: commAmt(), total: ep.mean + intr };
+  }
+  function sumSentence(D) {
+    var p = D.p, q = D.q, b = D.b;
+    return 'Se pacta una posición ' + (state.dir === 'long' ? 'larga' : 'corta') + ' sobre un futuro ' + state.pair + ' con valor nominal de ' + fmt(state.N, 0) + ' ' + b + ' (' + fmt(D.notional, 0) + ' ' + q + ') y vencimiento a ' + state.days + ' días. ' +
+      'Precio pactado (strike del futuro): ' + fmt(state.K, p.dec) + ' ' + q + ' por ' + b + ', con spot de ' + fmt(D.sp, p.dec) + '. ' +
+      'VaR de ' + fmt(D.hv.VaR, 0) + ' ' + q + ' (≈ ' + fmt(D.hv.VaR / D.sp, 0) + ' ' + b + ') a ' + state.h2 + (state.h2 === 1 ? ' día' : ' días') + ' con un nivel de confianza del ' + fmt(state.c2, 1) + '%. ' +
+      'Comisión por operativa: ' + fmt(D.comm, 2) + ' ' + q + ' (' + fmt(state.commPct, 2) + '% del nominal). ' +
+      'Margen inicial: ' + fmt(D.IM, 0) + ' ' + q + '. Cobertura: ' + D.hedgeTxt + '. ' +
+      'P&L esperado al vencimiento: ' + money(D.total, q) + '.';
+  }
+  function renderPanel11() {
+    var D = sumData(), p = D.p, q = D.q, b = D.b, H = D.H;
+    $('sumText').textContent = sumSentence(D);
+    $('kpis11').innerHTML =
+      kpiH('VaR ' + fmt(state.c2, 1) + '% a ' + state.h2 + (state.h2 === 1 ? ' día' : ' días'), fmt(D.hv.VaR, 0) + ' ' + q) +
+      kpiH('Expected Shortfall', fmt(D.hv.ES, 0) + ' ' + q) +
+      kpiH('P&L esperado al vencimiento', money(D.total, q), D.total >= 0 ? 'gain' : 'loss');
+    var row = function (a, v) { return '<tr><td class="l">' + a + '</td><td class="l">' + v + '</td></tr>'; };
+    $('sumBody').innerHTML =
+      row('Operación', (state.dir === 'long' ? 'Larga (compra)' : 'Corta (venta)') + ' de futuro ' + state.pair) +
+      row('Valor nominal', fmt(state.N, 0) + ' ' + b + ' · ' + fmt(D.notional, 0) + ' ' + q) +
+      row('Vencimiento', state.days + ' días') +
+      row('Precio pactado (strike del futuro)', fmt(state.K, p.dec) + ' ' + q + ' por ' + b) +
+      row('Spot de referencia', fmt(D.sp, p.dec) + ' (' + (MK.full ? (MK.src === 'snapshot' ? 'Yahoo Finance, consulta del ' + snapWhen(MK.snap) + ' h' : 'Yahoo Finance') : 'datos incrustados') + ')') +
+      row('Tasas', p.base + ' ' + fmt(rates[p.base], 2) + '% · ' + p.quote + ' ' + fmt(rates[p.quote], 2) + '% anual') +
+      row('Comisión por operativa', fmt(D.comm, 2) + ' ' + q + ' (' + fmt(state.commPct, 2) + '% del nominal)') +
+      row('Margen inicial / mínimo', fmt(D.IM, 0) + ' ' + q + ' (' + fmt(state.im, 1) + '% / ' + fmt(state.mm, 1) + '% del nominal)') +
+      row('Cobertura con opciones', D.hedgeTxt) +
+      row('VaR histórico ' + fmt(state.c2, 1) + '% a ' + state.h2 + (state.h2 === 1 ? ' día' : ' días'), fmt(D.hv.VaR, 0) + ' ' + q + ' ≈ ' + fmt(D.hv.VaR / D.sp, 0) + ' ' + b + ' · ' + fmt(state.cap > 0 ? D.hv.VaR / state.cap * 100 : 0, 2) + '% del capital') +
+      row('P&L esperado al vencimiento', money(D.total, q) + (isFinite(D.ep.lossP) ? ' · probabilidad de pérdida ' + fmt(D.ep.lossP * 100, 1) + '%' : ''));
+    $('sumNote').textContent = 'P&L esperado: ' + (D.ep.how === 'hist' ? 'promedio de ' + D.ep.n + ' escenarios históricos de ' + D.ep.td + ' días hábiles (≈ ' + state.days + ' días naturales) tomados de la ventana del paso 3' : 'rendimiento promedio diario de la ventana del paso 3 proyectado a ' + D.ep.td + ' días hábiles') + ', aplicados al precio pactado. Incluye comisión, prima de la cobertura e intereses del margen (' + money(D.intr, q) + '). ' + trendTxt() + ' El VaR es el histórico del paso 5 (con la cobertura, si hay). Cambia cualquier dato de la izquierda y el resumen se actualiza.';
+    $('sumMsg').textContent = '';
+  }
+
   function tbCsv() {
     if (!tbLast) renderPanel10();
     var T = tbLast.T, rows = [['Metrica', 'Valor', 'Limite', 'Utilizacion %', 'Estado', 'Detalle']];
@@ -2356,8 +2444,56 @@
   });
   $('mkRange').addEventListener('change', function () { MK.range = this.value; });
   $('mkAuto').addEventListener('change', function () { setAuto(this.checked); });
-  $('mkGo').addEventListener('click', function () { MK.proxy = $('mkProxy').value.trim(); refreshMarket(false); });
-  $('mkRefresh').addEventListener('click', function () { refreshMarket(false); });
+  $('mkGo').addEventListener('click', function () { MK.proxy = $('mkProxy').value.trim(); userRefresh(); });
+  // ---------- botón Actualizar datos ----------
+  var flashT = null, pollT = null, pollEnd = 0;
+  function hm(iso) { try { return new Date(iso).toLocaleTimeString('es-MX', { timeZone: 'America/Mexico_City', hour: '2-digit', minute: '2-digit', hour12: false }); } catch (e) { return ''; } }
+  function flash(msg, keep) {
+    var f = $('mkFlash'); f.textContent = msg; f.hidden = false;
+    clearTimeout(flashT); if (!keep) flashT = setTimeout(function () { f.hidden = true; }, 15000);
+  }
+  function setBtn(busy, txt) { var b = $('mkRefresh'); b.disabled = busy; b.textContent = txt || 'Actualizar datos'; }
+  function stopPoll() { if (pollT) { clearInterval(pollT); pollT = null; } }
+  function pollNew(before, ms) {
+    stopPoll(); pollEnd = Date.now() + ms;
+    pollT = setInterval(function () {
+      if (Date.now() > pollEnd) { stopPoll(); flash('La consulta nueva aún no aparece. GitHub a veces tarda más; vuelve a pulsar "Actualizar datos" en un par de minutos.'); return; }
+      fetchJson(MK.snapUrl + '?t=' + Date.now(), 10000).then(function (j) {
+        if (j && j.generated_at_utc && j.generated_at_utc !== before) {
+          stopPoll();
+          refreshMarket(false).then(function () { flash('Listo: datos actualizados con la consulta de las ' + hm(j.generated_at_utc) + ' h (' + j.ok_count + ' de ' + j.total + ' series OK).'); });
+        }
+      }, function () { });
+    }, 15000);
+  }
+  function triggerQuery(url) {
+    return fetch(url, { method: 'POST', cache: 'no-store' }).then(function (r) { return r.json().catch(function () { return { ok: r.ok }; }); });
+  }
+  function userRefresh() {
+    if (MK.busy) return;
+    var before = MK.snap ? MK.snap.generated_at_utc : null, trig = MK.snap && MK.snap.trigger_url;
+    setBtn(true, 'Actualizando…'); flash('Buscando datos nuevos…', true);
+    var asked = trig ? triggerQuery(trig).then(function (t) { return t || {}; }, function () { return { ok: false, msg: 'no respondió el servicio de consulta' }; }) : Promise.resolve(null);
+    asked.then(function (t) {
+      return refreshMarket(false).then(function () {
+        setBtn(false);
+        if (MK.src !== 'snapshot' || !MK.snap) { flash('No se pudo leer el servidor de datos (' + (MK.snapErr || MK.msg || 'sin respuesta') + '). La app sigue con los datos que ya tenía.'); return; }
+        var now = MK.snap.generated_at_utc, ag = snapAge(MK.snap);
+        if (before && now !== before) { flash('Listo: se cargó una consulta más nueva, la de las ' + hm(now) + ' h (' + MK.snap.ok_count + ' de ' + MK.snap.total + ' series OK).'); return; }
+        if (t && (t.ok || t.cooldown)) {
+          flash((t.ok ? 'Se pidió una consulta nueva a Yahoo Finance.' : 'Ya hay una consulta en curso.') + ' Tarda 1 a 2 minutos; la página se actualizará sola.', true);
+          pollNew(now, 300000); return;
+        }
+        flash('Ya tienes la consulta más reciente: ' + hm(now) + ' h (' + ag.txt + '). El servidor vuelve a consultar Yahoo cada 20 minutos en días hábiles' + (ghRunUrl() ? '; para una consulta inmediata usa "Generar consulta nueva" en la pestaña Mercado.' : '.'));
+      });
+    });
+  }
+  $('mkRefresh').addEventListener('click', userRefresh);
+  $('mkGhRun').addEventListener('click', function () {
+    if (!MK.snap) return;
+    flash('Cuando la ejecución termine en GitHub (1 a 2 minutos), esta página cargará los datos nuevos sola.', true);
+    pollNew(MK.snap.generated_at_utc, 420000);
+  });
   $('mkSpotLive').addEventListener('click', function () {
     Object.keys(pairs).forEach(function (k) { pairs[k].manual = false; }); MK.manualRate = {};
     Object.keys(MK.live).forEach(function (k) { pairs[k].spot = MK.live[k].price; });
@@ -2378,6 +2514,11 @@
   });
   $('tbPrint').addEventListener('click', function () { try { window.print(); } catch (e3) { } });
   $('tbCsv').addEventListener('click', tbCsv);
+  $('sumPrint').addEventListener('click', function () { try { window.print(); } catch (e4) { } });
+  $('sumCopy').addEventListener('click', function () {
+    var t = sumSentence(sumData()), done = function (ok) { $('sumMsg').textContent = ok ? 'Copiado.' : 'No se pudo copiar; selecciona el texto.'; };
+    try { navigator.clipboard.writeText(t).then(function () { done(true); }, function () { done(false); }); } catch (e5) { done(false); }
+  });
 
   // eventos
   ['N', 'days', 'comm', 'spot', 'rb', 'rq', 'K', 'range', 'st', 'stVal'].forEach(function (id) {

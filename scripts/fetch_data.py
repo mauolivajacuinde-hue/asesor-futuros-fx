@@ -131,6 +131,7 @@ def main():
         "run_url": (f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
                     if os.environ.get("GITHUB_RUN_ID") else None),
         "trigger": os.environ.get("GITHUB_EVENT_NAME", "manual"),
+        "trigger_url": os.environ.get("TRIGGER_URL") or None,
         "series": series,
     }
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)

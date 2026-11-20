@@ -5,7 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:        # botón "Run workflow" en GitHub = consulta nueva a Yahoo
   schedule:
-    - cron: "17 * * * 1-5"  # cada hora en días hábiles (UTC)
+    - cron: "5,25,45 * * * 1-5"  # cada 20 minutos en días hábiles (UTC)
     - cron: "17 14 * * 0,6" # una vez al día en fin de semana
 
 permissions:
@@ -34,6 +34,8 @@ jobs:
         run: curl -fsSL "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/data/market.json" -o prev.json || echo "Sin snapshot previo"
 
       - name: Consultar Yahoo Finance con yfinance
+        env:
+          TRIGGER_URL: ${{ vars.TRIGGER_URL }}
         run: |
           mkdir -p _site/data
           python scripts/fetch_data.py --out _site/data/market.json --prev prev.json
