@@ -42,7 +42,8 @@ jobs:
 
       - name: Armar el sitio
         run: |
-          cp index.html _site/index.html
+          sed "s/__BUILD__/${GITHUB_SHA}/" index.html > _site/index.html
+          grep -q "${GITHUB_SHA}" _site/index.html
           touch _site/.nojekyll
 
       - uses: actions/configure-pages@v5

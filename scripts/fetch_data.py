@@ -132,6 +132,7 @@ def main():
                     if os.environ.get("GITHUB_RUN_ID") else None),
         "trigger": os.environ.get("GITHUB_EVENT_NAME", "manual"),
         "trigger_url": os.environ.get("TRIGGER_URL") or None,
+        "build": os.environ.get("GITHUB_SHA"),
         "series": series,
     }
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)

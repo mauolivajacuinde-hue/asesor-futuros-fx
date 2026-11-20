@@ -720,6 +720,7 @@
   var defVol = { 'USD/MXN': 12, 'EUR/MXN': 12, 'CAD/MXN': 13, 'EUR/USD': 7, 'USD/EUR': 7 };
   var rates = { MXN: 7.00, USD: 3.75, EUR: 2.00, CAD: 2.50 };
   var FIXED_DAYS = [28, 90, 182, 360];
+  var BUILD = '__BUILD__';
   var state = { pair: 'USD/MXN', dir: 'long', N: 100000, days: 90, comm: 0, commPct: 0.05, K: 0, kManual: false, range: 15, stPct: 5, step: 1, im: 10, mm: 10, vol: 12, volManual: false, drift: 0, seed: 7, win: HISTN, hz: 1, rtype: 'simple', sortv: 'date', c1: 95, c2: 99, h1: 1, h2: 10, mmode: 'hist', hsel: '1', hstrat: 'protect', hd1: 2, hd2: 2, hratio: 100, ovol: 12, ovolManual: false, cap: 1000000, perfil: 'mod', lim: { cons: 2, mod: 5, agr: 10 }, obj: 'exposure', hmode: 'auto', pmode: 'grid', pbud: 3 };
 
   var $ = function (id) { return document.getElementById(id); };
@@ -1893,6 +1894,10 @@
     if (location.protocol === 'file:') return Promise.reject(new Error('la página está abierta como archivo local; el snapshot solo existe en el sitio publicado'));
     return fetchJson(MK.snapUrl + '?t=' + Date.now(), 12000).then(function (j) {
       if (!j || !j.series || !j.generated_at_utc) throw new Error('el snapshot no tiene un formato válido');
+      if (j.build && BUILD.indexOf('__') < 0 && j.build !== BUILD) {
+        var v = j.build.slice(0, 7);
+        if (location.search.indexOf('v=' + v) < 0) { location.replace(location.pathname + '?v=' + v); throw new Error('cargando la versión nueva de la app'); }
+      }
       MK.same = !!(MK.snap && MK.snap.generated_at_utc === j.generated_at_utc);
       MK.snap = j;
       return Object.keys(SYM).concat(['irx', 'evz']).map(function (k) {
